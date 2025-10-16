@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global To-Do Tracker</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -175,11 +174,6 @@
             color: #9ca3af;
         }
 
-        .empty-state svg {
-            margin: 0 auto 1rem;
-            opacity: 0.5;
-        }
-
         .empty-state p {
             font-size: 1.125rem;
             margin-bottom: 0.5rem;
@@ -213,6 +207,8 @@
             flex-shrink: 0;
             cursor: pointer;
             transition: transform 0.2s;
+            width: 24px;
+            height: 24px;
         }
 
         .todo-checkbox:hover {
@@ -248,6 +244,7 @@
             padding: 0.25rem;
             color: #6b7280;
             transition: all 0.2s;
+            font-size: 1.2rem;
         }
 
         .icon-btn:hover {
@@ -354,7 +351,7 @@
                 <div class="input-group">
                     <input type="text" id="taskInput" placeholder="Add a new task..." />
                     <button class="btn btn-primary" id="addBtn">
-                        <i data-lucide="plus"></i>
+                        <span>➕</span>
                         <span>Add</span>
                     </button>
                 </div>
@@ -378,9 +375,6 @@
     </div>
 
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
-
         // State
         let todos = [];
         let currentFilter = 'all';
@@ -482,7 +476,7 @@
 
             // Create Google Calendar URL
             const startDateTime = new Date(`${date}T${time}:00`);
-            const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // 1 hour later
+            const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
             
             const formatGoogleDate = (date) => {
                 return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -526,9 +520,6 @@
             if (filteredTodos.length === 0) {
                 todoList.innerHTML = `
                     <div class="empty-state">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                        </svg>
                         <p>No tasks ${currentFilter !== 'all' ? currentFilter : 'yet'}</p>
                         <small>Add your first task to get started!</small>
                     </div>
@@ -540,26 +531,15 @@
                             <div>
                                 <div class="todo-item">
                                     <div class="todo-checkbox" onclick="toggleTodo(${todo.id})">
-                                        ${todo.completed 
-                                            ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-                                            : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>'
-                                        }
+                                        ${todo.completed ? '✓' : '○'}
                                     </div>
                                     <div class="todo-text ${todo.completed ? 'completed' : ''}">${todo.text}</div>
                                     <div class="todo-actions">
                                         <button class="icon-btn calendar" onclick="showDatePicker(${todo.id})" title="Add to calendar">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                                            </svg>
+                                            📅
                                         </button>
                                         <button class="icon-btn delete" onclick="deleteTodo(${todo.id})">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            </svg>
+                                            🗑️
                                         </button>
                                     </div>
                                 </div>
