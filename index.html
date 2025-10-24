@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global To-Do Tracker</title>
+    <title>Enhanced Global To-Do Tracker</title>
     <style>
         * {
             margin: 0;
@@ -98,7 +98,7 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             display: none;
         }
@@ -233,6 +233,13 @@
             border-bottom: 2px solid #f0f0f0;
         }
         
+        .priority-note {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
         .tasks-list {
             display: flex;
             flex-direction: column;
@@ -240,36 +247,62 @@
         }
         
         .task-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
             transition: all 0.2s;
             border: 2px solid transparent;
+            cursor: move;
         }
         
-        .task-item:hover {
+        .task-item.dragging {
+            opacity: 0.5;
             border-color: #11998e;
-            background: white;
         }
         
-        .task-item.completed {
+        .task-item.drag-over {
+            border-color: #38ef7d;
+            border-style: dashed;
+        }
+        
+        .task-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+        }
+        
+        .task-item:hover .task-main {
+            background: white;
+            border-radius: 10px;
+        }
+        
+        .task-item.completed .task-main {
             opacity: 0.6;
         }
         
+        .drag-handle {
+            font-size: 1.2em;
+            color: #999;
+            cursor: grab;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
         .task-checkbox {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             cursor: pointer;
             accent-color: #11998e;
         }
         
         .task-text {
             flex: 1;
-            font-size: 1em;
+            font-size: 1.15em;
             color: #333;
+            cursor: pointer;
+            font-weight: 500;
         }
         
         .task-item.completed .task-text {
@@ -278,9 +311,29 @@
         }
         
         .task-time {
-            font-size: 0.85em;
+            font-size: 0.9em;
             color: #999;
             white-space: nowrap;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .task-calendar-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .task-calendar-btn:hover {
+            background: #357ae8;
         }
         
         .task-delete {
@@ -295,6 +348,91 @@
         }
         
         .task-delete:hover {
+            background: #c82333;
+        }
+        
+        .subtasks-section {
+            padding: 0 15px 15px 60px;
+            display: none;
+        }
+        
+        .subtasks-section.expanded {
+            display: block;
+        }
+        
+        .subtask-add {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .subtask-add input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+        
+        .subtask-add button {
+            background: #11998e;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        
+        .subtask-add button:hover {
+            background: #0d7a70;
+        }
+        
+        .subtasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .subtask-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #11998e;
+        }
+        
+        .subtask-text {
+            flex: 1;
+            font-size: 1em;
+            color: #555;
+        }
+        
+        .subtask-item.completed .subtask-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+        
+        .subtask-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+        }
+        
+        .subtask-delete:hover {
             background: #c82333;
         }
         
@@ -382,6 +520,7 @@
                 📋 All Tasks
                 <button class="clear-completed-btn" onclick="clearCompleted()" style="float: right;">Clear Completed</button>
             </div>
+            <div class="priority-note">💡 Drag tasks to reorder by priority. Click task to add subtasks.</div>
             <div class="tasks-list" id="tasksList"></div>
         </div>
     </div>
@@ -443,11 +582,19 @@
         const tasksRef = ref(database, 'globalTasks');
 
         let tasks = [];
+        let draggedTaskId = null;
 
         onValue(tasksRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                tasks = Object.entries(data).map(([id, task]) => ({ id, ...task }));
+                tasks = Object.entries(data).map(([id, task]) => ({ 
+                    id, 
+                    ...task,
+                    subtasks: task.subtasks || []
+                }));
+                
+                // Sort by priority (order field)
+                tasks.sort((a, b) => (a.order || 0) - (b.order || 0));
             } else {
                 tasks = [];
             }
@@ -471,7 +618,9 @@
             const task = {
                 text: text,
                 completed: false,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                order: tasks.length,
+                subtasks: []
             };
 
             updateSyncStatus(false);
@@ -496,6 +645,87 @@
                 updateSyncStatus(false);
                 remove(ref(database, `globalTasks/${taskId}`));
             }
+        };
+
+        window.toggleSubtasks = function(taskId, event) {
+            // Don't toggle if clicking checkbox or buttons
+            if (event.target.type === 'checkbox' || event.target.tagName === 'BUTTON') {
+                return;
+            }
+            
+            const subtasksSection = document.getElementById(`subtasks-${taskId}`);
+            if (subtasksSection) {
+                subtasksSection.classList.toggle('expanded');
+            }
+        };
+
+        window.addSubtask = function(taskId) {
+            const input = document.getElementById(`subtask-input-${taskId}`);
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            const subtasks = task.subtasks || [];
+            subtasks.push({
+                id: Date.now().toString(),
+                text: text,
+                completed: false
+            });
+            
+            updateSyncStatus(false);
+            update(ref(database, `globalTasks/${taskId}`), {
+                subtasks: subtasks
+            }).then(() => {
+                input.value = '';
+            });
+        };
+
+        window.toggleSubtask = function(taskId, subtaskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            const subtasks = task.subtasks || [];
+            const subtask = subtasks.find(s => s.id === subtaskId);
+            if (!subtask) return;
+            
+            subtask.completed = !subtask.completed;
+            
+            updateSyncStatus(false);
+            update(ref(database, `globalTasks/${taskId}`), {
+                subtasks: subtasks
+            });
+        };
+
+        window.deleteSubtask = function(taskId, subtaskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            const subtasks = (task.subtasks || []).filter(s => s.id !== subtaskId);
+            
+            updateSyncStatus(false);
+            update(ref(database, `globalTasks/${taskId}`), {
+                subtasks: subtasks
+            });
+        };
+
+        window.addToCalendar = function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // Create Google Calendar event URL
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour later
+            
+            const formatDate = (date) => {
+                return date.toISOString().replace(/-|:|\.\d\d\d/g, '');
+            };
+            
+            const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.text)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent('Task from Global To-Do Tracker')}`;
+            
+            window.open(calendarUrl, '_blank');
         };
 
         window.clearCompleted = function() {
@@ -540,6 +770,52 @@
             return date.toLocaleDateString();
         }
 
+        function handleDragStart(e, taskId) {
+            draggedTaskId = taskId;
+            e.currentTarget.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.task-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, targetTaskId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            if (draggedTaskId === targetTaskId) return;
+            
+            const draggedIndex = tasks.findIndex(t => t.id === draggedTaskId);
+            const targetIndex = tasks.findIndex(t => t.id === targetTaskId);
+            
+            if (draggedIndex === -1 || targetIndex === -1) return;
+            
+            // Reorder tasks
+            const [removed] = tasks.splice(draggedIndex, 1);
+            tasks.splice(targetIndex, 0, removed);
+            
+            // Update order in Firebase
+            updateSyncStatus(false);
+            const updates = {};
+            tasks.forEach((task, index) => {
+                updates[`globalTasks/${task.id}/order`] = index;
+            });
+            
+            update(ref(database), updates);
+        }
+
         function renderTasks() {
             const container = document.getElementById('tasksList');
 
@@ -553,29 +829,70 @@
                 return;
             }
 
-            const sortedTasks = [...tasks].sort((a, b) => {
-                if (a.completed !== b.completed) {
-                    return a.completed ? 1 : -1;
-                }
-                return new Date(b.createdAt) - new Date(a.createdAt);
-            });
+            const html = tasks.map(task => {
+                const subtasksHtml = (task.subtasks || []).map(subtask => `
+                    <div class="subtask-item ${subtask.completed ? 'completed' : ''}">
+                        <input 
+                            type="checkbox" 
+                            class="subtask-checkbox"
+                            ${subtask.completed ? 'checked' : ''}
+                            onchange="toggleSubtask('${task.id}', '${subtask.id}')"
+                        >
+                        <div class="subtask-text">${subtask.text}</div>
+                        <button class="subtask-delete" onclick="deleteSubtask('${task.id}', '${subtask.id}')">×</button>
+                    </div>
+                `).join('');
 
-            const html = sortedTasks.map(task => `
-                <div class="task-item ${task.completed ? 'completed' : ''}">
-                    <input 
-                        type="checkbox" 
-                        class="task-checkbox"
-                        ${task.completed ? 'checked' : ''}
-                        onchange="toggleTask('${task.id}')"
-                    >
-                    <div class="task-text">${task.text}</div>
-                    <div class="task-time">${formatTime(task.createdAt)}</div>
-                    <button class="task-delete" onclick="deleteTask('${task.id}')">Delete</button>
-                </div>
-            `).join('');
+                return `
+                    <div class="task-item ${task.completed ? 'completed' : ''}" 
+                         draggable="true"
+                         ondragstart="handleDragStart(event, '${task.id}')"
+                         ondragend="handleDragEnd(event)"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)"
+                         ondrop="handleDrop(event, '${task.id}')">
+                        <div class="task-main" onclick="toggleSubtasks('${task.id}', event)">
+                            <span class="drag-handle">☰</span>
+                            <input 
+                                type="checkbox" 
+                                class="task-checkbox"
+                                ${task.completed ? 'checked' : ''}
+                                onchange="toggleTask('${task.id}')"
+                            >
+                            <div class="task-text">${task.text}</div>
+                            <div class="task-time">${formatTime(task.createdAt)}</div>
+                            <div class="task-actions">
+                                <button class="task-calendar-btn" onclick="addToCalendar('${task.id}')">📅</button>
+                                <button class="task-delete" onclick="deleteTask('${task.id}')">Delete</button>
+                            </div>
+                        </div>
+                        <div class="subtasks-section" id="subtasks-${task.id}">
+                            <div class="subtask-add">
+                                <input 
+                                    type="text" 
+                                    id="subtask-input-${task.id}"
+                                    placeholder="Add subtask..."
+                                    onkeypress="if(event.key==='Enter') addSubtask('${task.id}')"
+                                >
+                                <button onclick="addSubtask('${task.id}')">Add</button>
+                            </div>
+                            <div class="subtasks-list">
+                                ${subtasksHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
 
             container.innerHTML = html;
         }
+
+        // Make drag and drop functions global
+        window.handleDragStart = handleDragStart;
+        window.handleDragEnd = handleDragEnd;
+        window.handleDragOver = handleDragOver;
+        window.handleDragLeave = handleDragLeave;
+        window.handleDrop = handleDrop;
     </script>
 </body>
 </html>
