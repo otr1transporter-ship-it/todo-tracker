@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Global To-Do Tracker</title>
+    <title>Enhanced Global To-Do Tracker with Calendar Sync</title>
     <style>
         * {
             margin: 0;
@@ -126,6 +126,37 @@
             font-size: 0.85em;
             color: #666;
             margin-top: 5px;
+        }
+        
+        .calendar-status {
+            font-size: 0.85em;
+            margin-top: 5px;
+            padding: 8px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        
+        .calendar-status.connected {
+            color: #28a745;
+        }
+        
+        .calendar-status.disconnected {
+            color: #dc3545;
+        }
+        
+        .connect-calendar-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+        
+        .connect-calendar-btn:hover {
+            background: #357ae8;
         }
         
         .logout-btn {
@@ -254,6 +285,10 @@
             cursor: move;
         }
         
+        .task-item.in-calendar {
+            border-left: 4px solid #4285f4;
+        }
+        
         .task-item.dragging {
             opacity: 0.5;
             border-color: #11998e;
@@ -310,6 +345,15 @@
             color: #999;
         }
         
+        .calendar-badge {
+            background: #4285f4;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        
         .task-time {
             font-size: 0.9em;
             color: #999;
@@ -334,6 +378,15 @@
         
         .task-calendar-btn:hover {
             background: #357ae8;
+        }
+        
+        .task-calendar-btn.added {
+            background: #34a853;
+        }
+        
+        .task-calendar-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         
         .task-delete {
@@ -486,6 +539,10 @@
             <button class="logout-btn" onclick="logout()">🔓 Logout</button>
             <h1>✅ Global To-Do Tracker</h1>
             <div class="sync-status" id="syncStatus">🔄 Connecting...</div>
+            <div class="calendar-status disconnected" id="calendarStatus">
+                📅 Calendar: Not Connected
+                <button class="connect-calendar-btn" onclick="connectCalendar()">Connect Google Calendar</button>
+            </div>
         </div>
 
         <div class="stats">
@@ -520,13 +577,28 @@
                 📋 All Tasks
                 <button class="clear-completed-btn" onclick="clearCompleted()" style="float: right;">Clear Completed</button>
             </div>
-            <div class="priority-note">💡 Drag tasks to reorder by priority. Click task to add subtasks.</div>
+            <div class="priority-note">💡 Drag tasks to reorder by priority. Click task to add subtasks. Connect calendar to auto-sync events.</div>
             <div class="tasks-list" id="tasksList"></div>
         </div>
     </div>
 
+    <!-- Google API Client -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <script type="module">
         const CORRECT_PASSWORD = "Raineer";
+        
+        // Google Calendar API Configuration
+        const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+        const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let accessToken = null;
 
         if (sessionStorage.getItem('todoTrackerAuth') === 'true') {
             showMainApp();
@@ -556,6 +628,7 @@
         function showMainApp() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('mainContainer').classList.add('show');
+            initializeGoogleAPI();
         }
 
         document.getElementById('passwordInput').addEventListener('keypress', function(e) {
@@ -563,6 +636,109 @@
                 checkPassword();
             }
         });
+
+        // Initialize Google API
+        function initializeGoogleAPI() {
+            gapi.load('client', initializeGapiClient);
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+            
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: SCOPES,
+                callback: (response) => {
+                    if (response.error !== undefined) {
+                        throw (response);
+                    }
+                    accessToken = response.access_token;
+                    updateCalendarStatus(true);
+                },
+            });
+            gisInited = true;
+        }
+
+        async function initializeGapiClient() {
+            await gapi.client.init({
+                apiKey: GOOGLE_API_KEY,
+                discoveryDocs: [DISCOVERY_DOC],
+            });
+            gapiInited = true;
+        }
+
+        function handleCredentialResponse(response) {
+            // Handle credential response if needed
+        }
+
+        window.connectCalendar = function() {
+            if (gisInited) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            }
+        };
+
+        function updateCalendarStatus(connected) {
+            const statusEl = document.getElementById('calendarStatus');
+            if (connected) {
+                statusEl.className = 'calendar-status connected';
+                statusEl.innerHTML = '📅 Calendar: Connected ✓';
+            } else {
+                statusEl.className = 'calendar-status disconnected';
+                statusEl.innerHTML = `
+                    📅 Calendar: Not Connected
+                    <button class="connect-calendar-btn" onclick="connectCalendar()">Connect Google Calendar</button>
+                `;
+            }
+        }
+
+        // Calendar API Functions
+        async function createCalendarEvent(taskId, taskText) {
+            if (!accessToken) {
+                alert('Please connect your Google Calendar first!');
+                return null;
+            }
+
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour later
+
+            const event = {
+                'summary': taskText,
+                'description': 'Task from Global To-Do Tracker',
+                'start': {
+                    'dateTime': startDate.toISOString(),
+                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                },
+                'end': {
+                    'dateTime': endDate.toISOString(),
+                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                }
+            };
+
+            try {
+                const response = await gapi.client.calendar.events.insert({
+                    'calendarId': 'primary',
+                    'resource': event
+                });
+                return response.result.id;
+            } catch (error) {
+                console.error('Error creating calendar event:', error);
+                alert('Failed to create calendar event. Please try again.');
+                return null;
+            }
+        }
+
+        async function deleteCalendarEvent(eventId) {
+            if (!accessToken || !eventId) return;
+
+            try {
+                await gapi.client.calendar.events.delete({
+                    'calendarId': 'primary',
+                    'eventId': eventId
+                });
+            } catch (error) {
+                console.error('Error deleting calendar event:', error);
+            }
+        }
 
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getDatabase, ref, set, onValue, remove, update, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
@@ -590,7 +766,8 @@
                 tasks = Object.entries(data).map(([id, task]) => ({ 
                     id, 
                     ...task,
-                    subtasks: task.subtasks || []
+                    subtasks: task.subtasks || [],
+                    calendarEventId: task.calendarEventId || null
                 }));
                 
                 // Sort by priority (order field)
@@ -620,7 +797,8 @@
                 completed: false,
                 createdAt: new Date().toISOString(),
                 order: tasks.length,
-                subtasks: []
+                subtasks: [],
+                calendarEventId: null
             };
 
             updateSyncStatus(false);
@@ -630,18 +808,38 @@
             });
         };
 
-        window.toggleTask = function(taskId) {
+        window.toggleTask = async function(taskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
 
-            updateSyncStatus(false);
-            update(ref(database, `globalTasks/${taskId}`), {
-                completed: !task.completed
-            });
+            const newCompletedState = !task.completed;
+
+            // If completing the task and it has a calendar event, delete it
+            if (newCompletedState && task.calendarEventId) {
+                await deleteCalendarEvent(task.calendarEventId);
+                
+                updateSyncStatus(false);
+                update(ref(database, `globalTasks/${taskId}`), {
+                    completed: newCompletedState,
+                    calendarEventId: null
+                });
+            } else {
+                updateSyncStatus(false);
+                update(ref(database, `globalTasks/${taskId}`), {
+                    completed: newCompletedState
+                });
+            }
         };
 
-        window.deleteTask = function(taskId) {
+        window.deleteTask = async function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            
             if (confirm('Delete this task?')) {
+                // Delete from calendar if it exists
+                if (task && task.calendarEventId) {
+                    await deleteCalendarEvent(task.calendarEventId);
+                }
+                
                 updateSyncStatus(false);
                 remove(ref(database, `globalTasks/${taskId}`));
             }
@@ -711,24 +909,27 @@
             });
         };
 
-        window.addToCalendar = function(taskId) {
+        window.addToCalendar = async function(taskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
+
+            if (task.calendarEventId) {
+                alert('This task is already in your calendar!');
+                return;
+            }
+
+            const eventId = await createCalendarEvent(taskId, task.text);
             
-            // Create Google Calendar event URL
-            const startDate = new Date();
-            const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour later
-            
-            const formatDate = (date) => {
-                return date.toISOString().replace(/-|:|\.\d\d\d/g, '');
-            };
-            
-            const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.text)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent('Task from Global To-Do Tracker')}`;
-            
-            window.open(calendarUrl, '_blank');
+            if (eventId) {
+                updateSyncStatus(false);
+                update(ref(database, `globalTasks/${taskId}`), {
+                    calendarEventId: eventId
+                });
+                alert('Task added to your Google Calendar!');
+            }
         };
 
-        window.clearCompleted = function() {
+        window.clearCompleted = async function() {
             const completedTasks = tasks.filter(t => t.completed);
             
             if (completedTasks.length === 0) {
@@ -738,9 +939,14 @@
 
             if (confirm(`Clear ${completedTasks.length} completed task(s)?`)) {
                 updateSyncStatus(false);
-                completedTasks.forEach(task => {
+                
+                // Delete calendar events for completed tasks
+                for (const task of completedTasks) {
+                    if (task.calendarEventId) {
+                        await deleteCalendarEvent(task.calendarEventId);
+                    }
                     remove(ref(database, `globalTasks/${task.id}`));
-                });
+                }
             }
         };
 
@@ -843,8 +1049,13 @@
                     </div>
                 `).join('');
 
+                const calendarBadge = task.calendarEventId ? '<span class="calendar-badge">📅 In Calendar</span>' : '';
+                const calendarBtnText = task.calendarEventId ? '✓ Added' : '+ Calendar';
+                const calendarBtnClass = task.calendarEventId ? 'task-calendar-btn added' : 'task-calendar-btn';
+                const calendarBtnDisabled = task.calendarEventId ? 'disabled' : '';
+
                 return `
-                    <div class="task-item ${task.completed ? 'completed' : ''}" 
+                    <div class="task-item ${task.completed ? 'completed' : ''} ${task.calendarEventId ? 'in-calendar' : ''}" 
                          draggable="true"
                          ondragstart="handleDragStart(event, '${task.id}')"
                          ondragend="handleDragEnd(event)"
@@ -860,9 +1071,10 @@
                                 onchange="toggleTask('${task.id}')"
                             >
                             <div class="task-text">${task.text}</div>
+                            ${calendarBadge}
                             <div class="task-time">${formatTime(task.createdAt)}</div>
                             <div class="task-actions">
-                                <button class="task-calendar-btn" onclick="addToCalendar('${task.id}')">📅</button>
+                                <button class="${calendarBtnClass}" onclick="addToCalendar('${task.id}')" ${calendarBtnDisabled}>${calendarBtnText}</button>
                                 <button class="task-delete" onclick="deleteTask('${task.id}')">Delete</button>
                             </div>
                         </div>
@@ -887,7 +1099,7 @@
             container.innerHTML = html;
         }
 
-        // Make drag and drop functions global
+        // Make functions global
         window.handleDragStart = handleDragStart;
         window.handleDragEnd = handleDragEnd;
         window.handleDragOver = handleDragOver;
