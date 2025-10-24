@@ -59,4 +59,523 @@
         .login-box input {
             width: 100%;
             padding: 12px;
-            border: 2px
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+        
+        .login-box input:focus {
+            outline: none;
+            border-color: #11998e;
+        }
+        
+        .login-box button {
+            width: 100%;
+            background: #11998e;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .login-box button:hover {
+            background: #0d7a70;
+        }
+        
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: none;
+        }
+        
+        .container.show {
+            display: block;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            color: #11998e;
+            margin-bottom: 5px;
+        }
+        
+        .sync-status {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: #11998e;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        
+        .logout-btn:hover {
+            background: #0d7a70;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #11998e;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+        
+        .add-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .add-form {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .add-form input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        .add-form input:focus {
+            outline: none;
+            border-color: #11998e;
+        }
+        
+        .add-btn {
+            background: #11998e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .add-btn:hover {
+            background: #0d7a70;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .tasks-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .task-item:hover {
+            border-color: #11998e;
+            background: white;
+        }
+        
+        .task-item.completed {
+            opacity: 0.6;
+        }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #11998e;
+        }
+        
+        .task-text {
+            flex: 1;
+            font-size: 1em;
+            color: #333;
+        }
+        
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+        
+        .task-time {
+            font-size: 0.85em;
+            color: #999;
+            white-space: nowrap;
+        }
+        
+        .task-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .task-delete:hover {
+            background: #c82333;
+        }
+        
+        .clear-completed-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .clear-completed-btn:hover {
+            background: #5a6268;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .empty-state-text {
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h1>✅ Global To-Do Tracker</h1>
+            <p>Please enter password to access</p>
+            <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+            <button onclick="checkPassword()">Access Tracker</button>
+            <div class="error-message" id="errorMessage">Incorrect password. Please try again.</div>
+        </div>
+    </div>
+
+    <!-- Main Tracker -->
+    <div class="container" id="mainContainer">
+        <div class="header">
+            <button class="logout-btn" onclick="logout()">🔓 Logout</button>
+            <h1>✅ Global To-Do Tracker</h1>
+            <div class="sync-status" id="syncStatus">🔄 Connecting...</div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalTasks">0</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeTasks">0</div>
+                <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completedTasks">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+
+        <div class="add-section">
+            <div class="add-form">
+                <input 
+                    type="text" 
+                    id="taskInput" 
+                    placeholder="What needs to be done?"
+                    onkeypress="if(event.key==='Enter') addTask()"
+                >
+                <button class="add-btn" onclick="addTask()">+ Add Task</button>
+            </div>
+        </div>
+
+        <div class="tasks-section">
+            <div class="section-header">
+                📋 All Tasks
+                <button class="clear-completed-btn" onclick="clearCompleted()" style="float: right;">Clear Completed</button>
+            </div>
+            <div class="tasks-list" id="tasksList"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        const CORRECT_PASSWORD = "Raineer";
+
+        if (sessionStorage.getItem('todoTrackerAuth') === 'true') {
+            showMainApp();
+        }
+
+        window.checkPassword = function() {
+            const input = document.getElementById('passwordInput');
+            const errorMsg = document.getElementById('errorMessage');
+
+            if (input.value === CORRECT_PASSWORD) {
+                sessionStorage.setItem('todoTrackerAuth', 'true');
+                showMainApp();
+            } else {
+                errorMsg.classList.add('show');
+                input.value = '';
+                input.focus();
+            }
+        };
+
+        window.logout = function() {
+            sessionStorage.removeItem('todoTrackerAuth');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainContainer').classList.remove('show');
+            document.getElementById('passwordInput').value = '';
+        };
+
+        function showMainApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainContainer').classList.add('show');
+        }
+
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, onValue, remove, update, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIsG9oUnflAo0lsGCnco_jkGtEVtO4gkU",
+            authDomain: "steve-s-bill-tracker.firebaseapp.com",
+            projectId: "steve-s-bill-tracker",
+            storageBucket: "steve-s-bill-tracker.firebasestorage.app",
+            messagingSenderId: "717932357361",
+            appId: "1:717932357361:web:d6a4fd10eb676c802f6b50",
+            databaseURL: "https://steve-s-bill-tracker-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const tasksRef = ref(database, 'globalTasks');
+
+        let tasks = [];
+
+        onValue(tasksRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                tasks = Object.entries(data).map(([id, task]) => ({ id, ...task }));
+            } else {
+                tasks = [];
+            }
+            renderTasks();
+            updateStats();
+            updateSyncStatus(true);
+        });
+
+        function updateSyncStatus(synced) {
+            const status = document.getElementById('syncStatus');
+            status.textContent = synced ? '✅ Synced Across All Devices' : '🔄 Syncing...';
+        }
+
+        window.addTask = function() {
+            const input = document.getElementById('taskInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            const taskId = push(tasksRef).key;
+            const task = {
+                text: text,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            updateSyncStatus(false);
+            set(ref(database, `globalTasks/${taskId}`), task).then(() => {
+                input.value = '';
+                input.focus();
+            });
+        };
+
+        window.toggleTask = function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            updateSyncStatus(false);
+            update(ref(database, `globalTasks/${taskId}`), {
+                completed: !task.completed
+            });
+        };
+
+        window.deleteTask = function(taskId) {
+            if (confirm('Delete this task?')) {
+                updateSyncStatus(false);
+                remove(ref(database, `globalTasks/${taskId}`));
+            }
+        };
+
+        window.clearCompleted = function() {
+            const completedTasks = tasks.filter(t => t.completed);
+            
+            if (completedTasks.length === 0) {
+                alert('No completed tasks to clear!');
+                return;
+            }
+
+            if (confirm(`Clear ${completedTasks.length} completed task(s)?`)) {
+                updateSyncStatus(false);
+                completedTasks.forEach(task => {
+                    remove(ref(database, `globalTasks/${task.id}`));
+                });
+            }
+        };
+
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const active = total - completed;
+
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('activeTasks').textContent = active;
+            document.getElementById('completedTasks').textContent = completed;
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            
+            return date.toLocaleDateString();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksList');
+
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <div class="empty-state-text">No tasks yet. Add one above!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const sortedTasks = [...tasks].sort((a, b) => {
+                if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            const html = sortedTasks.map(task => `
+                <div class="task-item ${task.completed ? 'completed' : ''}">
+                    <input 
+                        type="checkbox" 
+                        class="task-checkbox"
+                        ${task.completed ? 'checked' : ''}
+                        onchange="toggleTask('${task.id}')"
+                    >
+                    <div class="task-text">${task.text}</div>
+                    <div class="task-time">${formatTime(task.createdAt)}</div>
+                    <button class="task-delete" onclick="deleteTask('${task.id}')">Delete</button>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
